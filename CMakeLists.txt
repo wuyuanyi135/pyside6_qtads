@@ -25,8 +25,8 @@ endif()
 message(STATUS "Using python: ${Python3_EXECUTABLE}")
 
 # Find the required Qt packages
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Core REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} 5.5 COMPONENTS Core Gui Widgets REQUIRED)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
+# find_package(Qt${QT_VERSION_MAJOR} 6.0 COMPONENTS Core Gui Widgets REQUIRED)
 
 # Set CPP standard to C++11 minimum.
 set(CMAKE_CXX_STANDARD 11)
