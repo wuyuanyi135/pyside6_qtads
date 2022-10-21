@@ -24,3 +24,30 @@ pip {wheel|install} --global-option="build_ext" --global-option="-DCMAKE_PREFIX_
 ```
 
 Any CMake flags needed to compile the Qt extension will need to be provided. This is likely at least CMAKE_PREFIX_PATH, as shown above.
+
+---
+
+Official Qt wheels do not target latest Python and may have old library deps. You can alternatively build from source.
+
+1. Install Qt using the official installer
+
+2. Download pyside source
+
+```bash
+	wget https://download.qt.io/official_releases/QtForPython/pyside6/PySide6-6.4.0-src/pyside-setup-opensource-src-6.4.0.zip
+	unzip pyside-setup-opensource-src-6.4.0.zip
+```
+
+3. Build & install pyside
+
+```bash
+	python setup.py install --qtpaths=$HOME/Qt/6.4.0/gcc_64/bin/qtpaths --ignore-git --build-tests --parallel=12 --verbose-build
+```
+
+Note: this will install pyside with all modules + shiboken6 and shiboken6-generator
+
+4. Build and install `pyside6_qtads`
+
+```bash
+	python setup.py install build_ext -D"CMAKE_PREFIX_PATH:PATH=$HOME/Qt/6.4.0/gcc_64/lib/cmake"
+```
