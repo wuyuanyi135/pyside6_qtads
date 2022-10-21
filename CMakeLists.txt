@@ -233,6 +233,11 @@ target_link_libraries(${bindings_library} PRIVATE ${project_library})
 target_link_libraries(${bindings_library} PRIVATE ${pyside_shared_libraries})
 target_link_libraries(${bindings_library} PRIVATE ${shiboken_shared_libraries})
 
+target_compile_options(qtadvanceddocking PRIVATE -Og)
+target_compile_options(${bindings_library} PRIVATE -Og)
+target_link_options(qtadvanceddocking PRIVATE -Xlinker -debug)
+target_link_options(${bindings_library} PRIVATE -Xlinker -debug)
+
 
 # Adjust the name of generated module.
 set_property(TARGET ${bindings_library} PROPERTY PREFIX "")

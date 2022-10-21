@@ -44,6 +44,7 @@ setuptools.setup(
             source_dir=str(Path(__file__).parent.absolute()),
             cmake_configure_options=[
                 "-DBUILD_EXAMPLES:BOOL=OFF",
+                "-DCMAKE_BUILD_TYPE=Debug",
                 f"-DPython3_ROOT_DIR={Path(sys.prefix)}",
             ]
             + CIBW_CMAKE_OPTIONS,

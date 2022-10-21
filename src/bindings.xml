@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <typesystem package="pyside6_qtads">
-    <load-typesystem name="typesystem_widgets.xml" generate="no"/>
+    <load-typesystem name="typesystem_core.xml" generate="no" />
+    <load-typesystem name="typesystem_gui.xml" generate="no" />
+    <load-typesystem name="typesystem_widgets.xml" generate="no" />
     <namespace-type name="ads">
         <enum-type name="DockWidgetArea"/>
         <enum-type name="eBitwiseOperator"/>
@@ -13,6 +15,11 @@
         <object-type name="CDockManager">
             <enum-type name="eConfigFlag"/>
             <enum-type name="eViewMenuInsertionOrder"/>
+            <modify-function signature="addDockWidget(ads::DockWidgetArea,ads::CDockWidget*,ads::CDockAreaWidget*)">
+              <modify-argument index="2">
+                <parent index="this" action="add"/>
+              </modify-argument>
+            </modify-function>
         </object-type>
         <object-type name="CDockWidget">
             <enum-type name="DockWidgetFeature"/>
@@ -20,6 +27,11 @@
             <enum-type name="eMinimumSizeHintMode"/>
             <enum-type name="eState"/>
             <enum-type name="eToggleViewActionMode"/>
+            <modify-function signature="setWidget(QWidget*, ads::CDockWidget::eInsertMode)">
+              <modify-argument index="1">
+                <parent index="this" action="add"/>
+              </modify-argument>
+            </modify-function>
         </object-type>
         <object-type name="CDockOverlay">
             <enum-type name="eMode"/>
