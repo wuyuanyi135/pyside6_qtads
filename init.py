@@ -1,6 +1,7 @@
 from .pyside6_qtads import ads as _ads
 
 # DockWidgetArea
+DockWidgetArea = _ads.DockWidgetArea
 NoDockWidgetArea = _ads.NoDockWidgetArea
 LeftDockWidgetArea = _ads.LeftDockWidgetArea
 RightDockWidgetArea = _ads.RightDockWidgetArea
