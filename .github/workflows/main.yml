@@ -1,0 +1,138 @@
+on: push
+jobs:
+  build_src:
+    name: Build sdist
+    runs-on: ubuntu-latest
+    outputs:
+      rel0: ${{ steps.query.outputs.rel0 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Query PyPI for recent PySide release number
+        id: query
+        run: python ./scripts/get-recent-releases.py 3 >> $GITHUB_OUTPUT
+      - name: Build sdist
+        env:
+          PIP_EXTRA_INDEX_URL: https://download.qt.io/official_releases/QtForPython/
+          PYSIDE6_QTADS_NO_HARD_PYSIDE_REQUIREMENT: 1
+        run: |
+          python -m pip install --user build
+          python -m build --sdist
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: source
+          path: dist/*.tar.gz
+
+  # FIXME: Automate minimum Python, manylinux, and custom auditwheel lib filter
+  build_wheels:
+    needs: build_src
+    name: Build wheel ${{ matrix.wheel }} for PySide ${{ matrix.pyside_ver }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            pyside_ver: ${{ needs.build_src.outputs.rel0 }}
+            wheel: cp37-win_amd64
+            arch: x86_64
+          - os: ubuntu-latest
+            pyside_ver: ${{ needs.build_src.outputs.rel0 }}
+            wheel: cp37-manylinux_x86_64
+            arch: x86_64
+          - os: macos-latest
+            pyside_ver: ${{ needs.build_src.outputs.rel0 }}
+            wheel: cp37-macosx_x86_64
+            arch: x86_64
+          - os: macos-latest
+            pyside_ver: ${{ needs.build_src.outputs.rel0 }}
+            wheel: cp310-macosx_arm64
+            arch: arm64
+    steps:
+      - name: Download sdist
+        uses: actions/download-artifact@v3
+        with:
+          name: source
+      - name: Unpack sdist
+        shell: bash
+        run: tar --strip-components 1 -xvf *.tar.gz
+      - name: Setup Qt vars
+        shell: bash
+        run: |
+          QT_VERSION=$(echo ${{ matrix.pyside_ver }} | cut -d. -f-3)
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            QT_BASE_DIR=${GITHUB_WORKSPACE}\\Qt
+            QT6_DIR=$QT_BASE_DIR\\$QT_VERSION\\msvc2019_64
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            QT_BASE_DIR=${GITHUB_WORKSPACE}/Qt
+            QT6_DIR=$QT_BASE_DIR/$QT_VERSION/macos
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
+            QT_BASE_DIR=${GITHUB_WORKSPACE}/Qt
+            QT6_DIR=$QT_BASE_DIR/$QT_VERSION/gcc_64
+          else
+            echo "Unsupported runner OS $RUNNER_OS"
+            exit 1
+          fi
+
+          echo "QT_VERSION=$QT_VERSION" >> $GITHUB_ENV
+          echo "QT_BASE_DIR=$QT_BASE_DIR" >> $GITHUB_ENV
+          echo "QT6_DIR=$QT6_DIR" >> $GITHUB_ENV
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: runner.os == 'Windows'
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.11.1
+        with:
+          output-dir: wheelhouse
+        env:
+          CIBW_ENVIRONMENT_LINUX: >
+            CMAKE_PREFIX_PATH=${{ env.QT6_DIR }}/lib/cmake
+            LD_LIBRARY_PATH=${{ env.QT6_DIR }}/lib
+            PIP_EXTRA_INDEX_URL=https://download.qt.io/official_releases/QtForPython/
+            VERBOSE=1
+          CIBW_ENVIRONMENT_MACOS: >
+            MACOSX_DEPLOYMENT_TARGET=10.13
+            CMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
+            CMAKE_PREFIX_PATH=${QT6_DIR}/lib/cmake
+            PIP_EXTRA_INDEX_URL=https://download.qt.io/official_releases/QtForPython/
+            VERBOSE=1
+          CIBW_ENVIRONMENT_WINDOWS: >
+            CMAKE_PREFIX_PATH="${QT6_DIR}\\lib\\cmake"
+            PIP_EXTRA_INDEX_URL=https://download.qt.io/official_releases/QtForPython/
+            VERBOSE=1
+          CIBW_BEFORE_BUILD_LINUX: >
+            dnf install -y mesa-libGL libxslt llvm clang-libs
+            && python3 -m pip install --user aqtinstall auditwheel
+            && python3 -m aqt install-qt linux desktop ${{ env.QT_VERSION }} --outputdir ${{ env.QT_BASE_DIR }}
+            && python3 ./scripts/set-qt-constraint.py ${{ matrix.pyside_ver }}
+          CIBW_BEFORE_BUILD_MACOS: >
+            python3 -m pip install aqtinstall
+            && python3 -m aqt install-qt mac desktop ${{ env.QT_VERSION }} --outputdir ${{ env.QT_BASE_DIR }}
+            && python3 ./scripts/set-qt-constraint.py ${{ matrix.pyside_ver }}
+          CIBW_BEFORE_BUILD_WINDOWS: >
+            python3 -m pip install aqtinstall
+            && python3 -m aqt install-qt windows desktop ${{ env.QT_VERSION }} win64_msvc2019_64 --outputdir ${{ env.QT_BASE_DIR }}
+            && python3 ./scripts/set-qt-constraint.py ${{ matrix.pyside_ver }}
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
+          CIBW_ARCHS_MACOS: x86_64 arm64
+          CIBW_BUILD_VERBOSITY: 1
+          CIBW_BUILD: ${{ matrix.wheel }}
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
+            ./scripts/custom-auditwheel.py repair -w {dest_dir} --only-plat --plat manylinux_2_28_x86_64 {wheel}
+          CIBW_REPAIR_WHEEL_COMMAND_MACOS:
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS:
+      # - name: Rename wheel to include Qt version
+      #   run: |
+      #     pushd wheelhouse
+      #     for i in *.whl; do
+      #       pkgname=$(echo $i | cut -d- -f1-2)
+      #       pkginfo=$(echo $i | cut -d- -f3-)
+      #       mv $i ${pkgname}-${{ matrix.pyside_ver }}-${pkginfo}
+      #     done
+      #     popd
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: ./wheelhouse/*.whl
