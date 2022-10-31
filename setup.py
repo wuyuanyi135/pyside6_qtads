@@ -79,8 +79,8 @@ init_py = Path("init.py").read_text()
 setuptools.setup(
     ext_modules=[
         CustomCMakeExtension(
-            name="Pyside6-QtAds",
-            install_prefix="pyside6_qtads",
+            name="PySide6-QtAds",
+            install_prefix="PySide6QtAds",
             write_top_level_init=init_py,
             source_dir=str(Path(__file__).parent.absolute()),
             cmake_configure_options=[

@@ -31,7 +31,7 @@ add_subdirectory(${qtads_subdir} EXCLUDE_FROM_ALL)
 set(project_library "qtadvanceddocking")
 
 # The name of the generated bindings module (as imported in Python).
-set(bindings_library "pyside6_qtads")
+set(bindings_library "PySide6QtAds")
 
 # The header file with all the types and functions for which bindings will be generated.
 # Usually it simply includes other headers of the library you are creating bindings for.
@@ -66,7 +66,7 @@ set(generated_sources
     ${CMAKE_CURRENT_BINARY_DIR}/${bindings_library}/ads_ctitlebarbutton_wrapper.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/${bindings_library}/ads_ifloatingwidget_wrapper.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/${bindings_library}/ads_wrapper.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/${bindings_library}/${bindings_library}_module_wrapper.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/${bindings_library}/pyside6qtads_module_wrapper.cpp
     )
 
 
