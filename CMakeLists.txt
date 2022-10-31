@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 cmake_policy(VERSION 3.16)
 
-# Enable policy to not use RPATH settings for install_name on macOS.
-# if(POLICY CMP0068)
-#   cmake_policy(SET CMP0068 NEW)
-# endif()
-
 # Enable policy to run automoc on generated files.
 if(POLICY CMP0071)
   cmake_policy(SET CMP0071 NEW)
@@ -13,7 +8,6 @@ endif()
 
 
 # ================================ General configuration ======================================
-
 
 project(PySide6QtAds)
 
@@ -26,7 +20,6 @@ message(STATUS "Using python: ${Python3_EXECUTABLE}")
 
 # Find the required Qt packages
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
-# find_package(Qt${QT_VERSION_MAJOR} 6.0 COMPONENTS Core Gui Widgets REQUIRED)
 
 # Set CPP standard to C++11 minimum.
 set(CMAKE_CXX_STANDARD 11)
@@ -34,7 +27,7 @@ set(CMAKE_CXX_STANDARD 11)
 # The C++ project library for which we will create bindings.
 set(qtads_subdir "Qt-Advanced-Docking-System")
 set(qtads_dir ${CMAKE_CURRENT_SOURCE_DIR}/${qtads_subdir})
-add_subdirectory(${qtads_subdir})
+add_subdirectory(${qtads_subdir} EXCLUDE_FROM_ALL)
 set(project_library "qtadvanceddocking")
 
 # The name of the generated bindings module (as imported in Python).
@@ -122,21 +115,18 @@ endif()
 
 # ==================================== RPATH configuration ====================================
 
+set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
-set(CMAKE_SKIP_BUILD_RPATH FALSE)
-set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) # was true
+if(UNIX AND NOT APPLE)
+    set(CMAKE_INSTALL_RPATH "$ORIGIN/lib:$ORIGIN/../PySide6/:$ORIGIN/../PySide6/Qt/lib:$ORIGIN/../shiboken6")
+endif()
 
-SET(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
-SET(MACOSX_RPATH TRUE)
-SET(CMAKE_INSTALL_RPATH ${shiboken_module_path} "${CMAKE_INSTALL_PREFIX}/lib")
-# set(CMAKE_INSTALL_RPATH ${shiboken_module_path} ${CMAKE_INSTALL_LIBDIR})
-
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-
+if(APPLE)
+    set(CMAKE_INSTALL_RPATH "@loader_path/lib;@loader_path/../PySide6/;@loader_path/../PySide6/Qt/lib;@loader_path/../shiboken6")
+    set(MACOSX_RPATH TRUE)
+endif()
 
 # ============================== Qt Includes for project_library ==============================
-
 
 # Get the relevant Qt include dirs, to pass them on to shiboken.
 set(QT_INCLUDE_DIR "")
@@ -168,7 +158,7 @@ foreach(INCLUDE_DIR ${QT_WIDGETS_INCLUDE_DIRS})
     list(APPEND QT_INCLUDES "-I${INCLUDE_DIR}")
 endforeach()
 
-# Check if Qt is a framework build on macOs. This affects how include paths should be handled.
+# Check if Qt is a framework build on macOS. This affects how include paths should be handled.
 get_target_property(QtCore_is_framework Qt6::Core FRAMEWORK)
 if (QtCore_is_framework)
     # Get the path to the Qt framework dir.
@@ -177,7 +167,7 @@ if (QtCore_is_framework)
     list(APPEND QT_INCLUDES "--framework-include-paths=${QT_FRAMEWORK_INCLUDE_DIR}")
 endif()
 
-# We need to include the headers for the module bindings that we use.
+# We need to include the headers for the module bindings that we use
 set(pyside_additional_includes "")
 foreach(INCLUDE_DIR ${pyside_include_dir})
     list(APPEND pyside_additional_includes "${INCLUDE_DIR}/QtCore")
@@ -188,12 +178,17 @@ endforeach()
 
 # ====================== Shiboken target for generating binding C++ files  ====================
 
+set(implicit_includes)
+foreach(_current ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES})
+    set(implicit_includes ${implicit_includes} "-I${_current}")
+endforeach()
 
 # Set up the options to pass to shiboken.
 set(shiboken_options --generator-set=shiboken --enable-parent-ctor-heuristic
     --enable-pyside-extensions --enable-return-value-heuristic --use-isnull-as-nb_nonzero
     --avoid-protected-hack
     ${QT_INCLUDES}
+    ${implicit_includes}
     -I${qtads_dir}/src
     -T${CMAKE_CURRENT_SOURCE_DIR}
     -T${pyside_path}/typesystems
@@ -213,7 +208,6 @@ add_custom_command(OUTPUT ${generated_sources}
 
 
 # =============================== CMake target - bindings_library =============================
-
 
 # Set the cpp files which will be used for the bindings library.
 set(${bindings_library}_sources ${generated_sources})
@@ -235,9 +229,7 @@ target_link_libraries(${bindings_library} PRIVATE ${shiboken_shared_libraries})
 
 target_compile_options(qtadvanceddocking PRIVATE -Og)
 target_compile_options(${bindings_library} PRIVATE -Og)
-target_link_options(qtadvanceddocking PRIVATE -Xlinker -debug)
-target_link_options(${bindings_library} PRIVATE -Xlinker -debug)
-
+target_compile_definitions(${bindings_library} PRIVATE "-DPy_LIMITED_API=0x03070000")
 
 # Adjust the name of generated module.
 set_property(TARGET ${bindings_library} PROPERTY PREFIX "")
@@ -252,62 +244,29 @@ if(APPLE)
   set_target_properties(${bindings_library} PROPERTIES LINK_FLAGS "-undefined dynamic_lookup")
 endif(APPLE)
 
-# Find and link to the python import library only on Windows.
-# On Linux and macOS, the undefined symbols will get resolved by the dynamic linker
-# (the symbols will be picked up in the Python executable).
 if (WIN32)
     list(GET python_linking_data 0 python_libdir)
-    list(GET python_linking_data 1 python_lib)
-    find_library(python_link_flags ${python_lib} PATHS ${python_libdir} HINTS ${python_libdir})
-    target_link_libraries(${bindings_library} PRIVATE ${python_link_flags})
+    target_link_directories(${bindings_library} PRIVATE ${python_libdir})
 endif()
 
 
 # ================================= Dubious deployment section ================================
 
-
-set(windows_shiboken_shared_libraries)
-
-if(WIN32)
-    # =========================================================================================
-    # !!! (The section below is deployment related, so in a real world application you will
-    # want to take care of this properly (this is simply to eliminate errors that users usually
-    # encounter.
-    # =========================================================================================
-    # Circumvent some "#pragma comment(lib)"s in "include/pyconfig.h" which might force to link
-    # against a wrong python shared library.
-
-    set(python_versions_list 3 36 37 38 39)
-    set(python_additional_link_flags "")
-    foreach(ver ${python_versions_list})
-        set(python_additional_link_flags
-            "${python_additional_link_flags} /NODEFAULTLIB:\"python${ver}_d.lib\"")
-        set(python_additional_link_flags
-            "${python_additional_link_flags} /NODEFAULTLIB:\"python${ver}.lib\"")
-    endforeach()
-
-    set_target_properties(${bindings_library}
-                           PROPERTIES LINK_FLAGS "${python_additional_link_flags}")
-
-    # Compile a list of shiboken shared libraries to be installed, so that
-    # the user doesn't have to set the PATH manually to point to the PySide6 package.
-    foreach(library_path ${shiboken_shared_libraries})
-        string(REGEX REPLACE ".lib$" ".dll" library_path ${library_path})
-        file(TO_CMAKE_PATH ${library_path} library_path)
-        list(APPEND windows_shiboken_shared_libraries "${library_path}")
-    endforeach()
-    # =========================================================================================
-    # !!! End of dubious section.
-    # =========================================================================================
-endif()
-
 install(TARGETS ${bindings_library}
         LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}
         RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}
         )
-install(TARGETS ${project_library}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        )
 
-install(FILES ${windows_shiboken_shared_libraries} DESTINATION ${CMAKE_INSTALL_PREFIX})
+if(NOT BUILD_STATIC)
+    install(TARGETS ${project_library}
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            )
+endif()
+
+install(FILES
+    "${qtads_dir}/LICENSE"
+    "${qtads_dir}/gnu-lgpl-v2.1.md"
+    DESTINATION license/ads
+    COMPONENT license
+)

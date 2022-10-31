@@ -1,4 +1,13 @@
-from .pyside6_qtads import ads as _ads
+import platform
+
+if platform.system() == 'Windows':
+	import os, PySide6, shiboken6
+	with os.add_dll_directory(os.path.dirname(PySide6.__file__)), \
+	     os.add_dll_directory(os.path.dirname(shiboken6.__file__)):
+		from .pyside6_qtads import ads as _ads
+else:
+	# Runtime library dependencies resolved via rpath
+	from .pyside6_qtads import ads as _ads
 
 # DockWidgetArea
 DockWidgetArea = _ads.DockWidgetArea
