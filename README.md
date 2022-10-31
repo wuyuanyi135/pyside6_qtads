@@ -1,7 +1,7 @@
 # PySide6-QtAds
 PySide6 bindings to [Qt Advanced Docking System](https://github.com/githubuser0xFFFF/Qt-Advanced-Docking-System)
 
-Pre-built wheels are available for Windows, macOS, and Linux via:
+Pre-built wheels are available for Windows, macOS, and Linux. You can install with:
 
 ```
 pip install PySide6-QtAds
