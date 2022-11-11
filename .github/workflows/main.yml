@@ -136,3 +136,22 @@ jobs:
         with:
           name: wheels
           path: ./wheelhouse/*.whl
+
+  upload_pypi:
+    needs: [build_wheels, build_src]
+    runs-on: ubuntu-latest
+    # upload to PyPI on every tag starting with 'v'
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: source
+          path: dist
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheels
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_TOKEN }}
