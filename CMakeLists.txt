@@ -12,7 +12,7 @@ endif()
 project(PySide6QtAds)
 
 # Find Python
-find_package (Python3 COMPONENTS Interpreter)
+find_package (Python3 COMPONENTS Interpreter Development)
 if(NOT Python3_Interpreter_FOUND)
     message(FATAL_ERROR "Python3 not found")
 endif()
@@ -23,6 +23,8 @@ set(OpenGL_GL_PREFERENCE "LEGACY")
 
 # Find the required Qt packages
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
+find_package(Shiboken6 6.0.0 REQUIRED)
+find_package(PySide6 6.0.0 REQUIRED)
 
 # Set CPP standard to C++11 minimum.
 set(CMAKE_CXX_STANDARD 11)
@@ -75,50 +77,19 @@ set(generated_sources
 
 # ================================== Shiboken detection ======================================
 
-
-# Macro to get various pyside / python include / link flags and paths.
-# Uses the not entirely supported utils/pyside_config.py file.
-macro(pyside_config option output_var)
-    if(${ARGC} GREATER 2)
-        set(is_list ${ARGV2})
-    else()
-        set(is_list "")
-    endif()
-
-    execute_process(
-      COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/pyside_config.py"
-              ${option}
-      OUTPUT_VARIABLE ${output_var}
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-    if ("${${output_var}}" STREQUAL "")
-        message(FATAL_ERROR "Error: Calling ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/pyside_config.py ${option} returned no output.")
-    endif()
-    if(is_list)
-        string (REPLACE " " ";" ${output_var} "${${output_var}}")
-    endif()
-endmacro()
-
 # Query for the shiboken generator path, Python path, include paths and linker flags.
-pyside_config(--shiboken-module-path shiboken_module_path)
-pyside_config(--shiboken-generator-path shiboken_generator_path)
-pyside_config(--pyside-path pyside_path)
-pyside_config(--pyside-include-path pyside_include_dir 1)
-pyside_config(--python-include-path python_include_dir)
-pyside_config(--shiboken-generator-include-path shiboken_include_dir 1)
-pyside_config(--shiboken-module-shared-libraries-cmake shiboken_shared_libraries 0)
-pyside_config(--python-link-flags-cmake python_linking_data 0)
-pyside_config(--pyside-shared-libraries-cmake pyside_shared_libraries 0)
+get_property(shiboken_include_dir TARGET Shiboken6::libshiboken PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+get_property(shiboken_shared_libraries TARGET Shiboken6::libshiboken PROPERTY IMPORTED_IMPLIB_RELEASE)
+get_property(pyside_include_dir TARGET PySide6::pyside6 PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+get_property(pyside_shared_libraries TARGET PySide6::pyside6 PROPERTY IMPORTED_IMPLIB_RELEASE)
 
-set(shiboken_path "${shiboken_generator_path}/shiboken6${CMAKE_EXECUTABLE_SUFFIX}")
+find_program(shiboken_path "shiboken6${CMAKE_EXECUTABLE_SUFFIX}")
 if(NOT EXISTS ${shiboken_path})
     message(FATAL_ERROR "Shiboken executable not found at path: ${shiboken_path}")
 endif()
 
 
 # ==================================== RPATH configuration ====================================
-
-set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
 if(UNIX AND NOT APPLE)
     set(CMAKE_INSTALL_RPATH "$ORIGIN/lib:$ORIGIN/../PySide6/:$ORIGIN/../PySide6/Qt/lib:$ORIGIN/../shiboken6")
@@ -194,7 +165,7 @@ set(shiboken_options --generator-set=shiboken --enable-parent-ctor-heuristic
     ${implicit_includes}
     -I${qtads_dir}/src
     -T${CMAKE_CURRENT_SOURCE_DIR}
-    -T${pyside_path}/typesystems
+    -T${PYSIDE_TYPESYSTEMS}
     --output-directory=${CMAKE_CURRENT_BINARY_DIR}
     )
 
@@ -221,7 +192,7 @@ add_library(${bindings_library} MODULE ${${bindings_library}_sources})
 # Apply relevant include and link flags.
 target_include_directories(${bindings_library} PRIVATE ${pyside_additional_includes})
 target_include_directories(${bindings_library} PRIVATE ${pyside_include_dir})
-target_include_directories(${bindings_library} PRIVATE ${python_include_dir})
+target_include_directories(${bindings_library} PRIVATE ${Python3_INCLUDE_DIRS})
 target_include_directories(${bindings_library} PRIVATE ${shiboken_include_dir})
 target_include_directories(${bindings_library} PRIVATE "${CMAKE_SOURCE_DIR}/src")
 
@@ -229,6 +200,10 @@ target_link_libraries(${bindings_library} PRIVATE Qt6::Widgets)
 target_link_libraries(${bindings_library} PRIVATE ${project_library})
 target_link_libraries(${bindings_library} PRIVATE ${pyside_shared_libraries})
 target_link_libraries(${bindings_library} PRIVATE ${shiboken_shared_libraries})
+
+if (UNIX)
+    target_link_libraries(${bindings_library} PUBLIC PySide6::pyside6)
+endif()
 
 target_compile_options(qtadvanceddocking PRIVATE -Og)
 target_compile_options(${bindings_library} PRIVATE -Og)
@@ -248,9 +223,24 @@ if(APPLE)
 endif(APPLE)
 
 if (WIN32)
-    list(GET python_linking_data 0 python_libdir)
-    target_link_directories(${bindings_library} PRIVATE ${python_libdir})
+    target_link_directories(${bindings_library} PRIVATE ${Python3_LIBRARY_DIRS})
 endif()
+
+
+# ===================================== CMake target - pyi ====================================
+
+set(generate_pyi_options ${bindings_library} --sys-path
+        "${CMAKE_CURRENT_BINARY_DIR}")
+
+# Add target to generate pyi file, which depends on the module target.
+add_custom_target("${bindings_library}_pyi" ALL
+                  COMMAND ${CMAKE_COMMAND} -E env ${ld_prefix}
+                  "${Python3_EXECUTABLE}"
+                  "${CMAKE_CURRENT_SOURCE_DIR}/support/generate_pyi.py" ${generate_pyi_options})
+add_dependencies("${bindings_library}_pyi" ${bindings_library})
+
+file(GLOB hinting_stub_files
+    "${CMAKE_CURRENT_BINARY_DIR}/*.pyi")
 
 
 # ================================= Dubious deployment section ================================
@@ -266,6 +256,9 @@ if(NOT BUILD_STATIC)
             RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
             )
 endif()
+
+install(FILES ${hinting_stub_files}
+        DESTINATION "${CMAKE_INSTALL_PREFIX}")
 
 install(FILES
     "${qtads_dir}/LICENSE"
