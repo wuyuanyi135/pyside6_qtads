@@ -11,7 +11,7 @@ def main():
 	with open(p, encoding='utf-8') as f:
 		d = f.read()
 
-	for pkg in ('PySide6', 'shiboken6', 'shiboken6_generator'):
+	for pkg in ('PySide6-Essentials', 'shiboken6', 'shiboken6_generator'):
 		d = d.replace(f'"{pkg}"', f'"{pkg}=={args.minver}"')
 
 	with open(p, 'w', encoding='utf-8') as f:
