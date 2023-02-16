@@ -236,11 +236,9 @@ set(generate_pyi_options ${bindings_library} --sys-path
 add_custom_target("${bindings_library}_pyi" ALL
                   COMMAND ${CMAKE_COMMAND} -E env ${ld_prefix}
                   "${Python3_EXECUTABLE}"
-                  "${CMAKE_CURRENT_SOURCE_DIR}/support/generate_pyi.py" ${generate_pyi_options})
+                  "${CMAKE_CURRENT_SOURCE_DIR}/support/generate_pyi.py" ${generate_pyi_options}
+                  BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/${bindings_library}.pyi")
 add_dependencies("${bindings_library}_pyi" ${bindings_library})
-
-file(GLOB hinting_stub_files
-    "${CMAKE_CURRENT_BINARY_DIR}/*.pyi")
 
 
 # ================================= Dubious deployment section ================================
