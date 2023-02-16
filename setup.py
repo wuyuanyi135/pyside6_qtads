@@ -15,11 +15,11 @@ import shiboken6
 
 if os.getenv('PYSIDE6_QTADS_NO_HARD_PYSIDE_REQUIREMENT'):
     install_requirements = [
-        'PySide6', 'shiboken6'
+        'PySide6-Essentials', 'shiboken6'
     ]
 else:
     install_requirements = [
-        f'PySide6=={PySide6.__version__}',
+        f'PySide6-Essentials=={PySide6.__version__}',
         f'shiboken6=={shiboken6.__version__}'
     ]
 
