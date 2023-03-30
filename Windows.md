@@ -20,6 +20,5 @@ pip install cmake_build_extension pyside6 shiboken6 shiboken6_generator
 
 generate pyi:
 ```
-shiboken6-genpyi.exe .\build\lib.win-amd64-cpython-310\PySide6QtAds\PySide6QtAds.pyd
+python setup.py build_all
 ```
-ImportError: DLL load failed while importing PySide6QtAds

@@ -91,7 +91,11 @@ class CustomBuildCommand(setuptools.Command):
 
     def run(self):
         self.run_command('install')
-        p = subprocess.run(r"python .\support\generate_pyi.py --sys-path .\build\temp.win-amd64-cpython-310 PySide6QtAds", shell=True)
+        p = subprocess.run(r"python "
+                           r".\support\generate_pyi.py "
+                           r"PySide6QtAds "
+                           # r"--sys-path .\build\temp.win-amd64-cpython-310 "
+                           r"--outpath .\build\lib.win-amd64-cpython-310", shell=True)
         self.run_command('bdist_wheel')
 
 
