@@ -31,7 +31,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(qtads_subdir "Qt-Advanced-Docking-System")
 set(qtads_dir ${CMAKE_CURRENT_SOURCE_DIR}/${qtads_subdir})
 add_subdirectory(${qtads_subdir} EXCLUDE_FROM_ALL)
-set(project_library "qt6advanceddocking")
+set(project_library "qtadvanceddocking")
 
 # The name of the generated bindings module (as imported in Python).
 set(bindings_library "PySide6QtAds")
