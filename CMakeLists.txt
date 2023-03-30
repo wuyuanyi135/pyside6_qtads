@@ -258,6 +258,16 @@ if (WIN32)
     target_link_directories(${bindings_library} PRIVATE ${python_libdir})
 endif()
 
+# ===================================== CMake target - pyi ====================================
+
+# set(generate_pyi_options ${bindings_library} --sys-path "${CMAKE_CURRENT_BINARY_DIR}" --outpath ${CMAKE_CURRENT_BINARY_DIR}/${bindings_library}.pyi)
+# Add target to generate pyi file, which depends on the module target.
+#add_custom_target("${bindings_library}_pyi" ALL
+#                  COMMAND ${CMAKE_COMMAND} -E env ${ld_prefix}
+#                  "${Python3_EXECUTABLE}"
+#                  "${CMAKE_CURRENT_SOURCE_DIR}/support/generate_pyi.py" ${generate_pyi_options}
+#                  BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/${bindings_library}.pyi")
+#add_dependencies("${bindings_library}_pyi" ${bindings_library})
 
 # ================================= Dubious deployment section ================================
 

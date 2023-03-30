@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import inspect
 import os
+import subprocess
 import sys
+from distutils.cmd import Command as _Command
 from pathlib import Path
-from typing import List
+from typing import List, Any
 
 import cmake_build_extension
 import setuptools
@@ -11,7 +13,6 @@ from wheel.bdist_wheel import bdist_wheel
 
 import PySide6
 import shiboken6
-
 
 if os.getenv('PYSIDE6_QTADS_NO_HARD_PYSIDE_REQUIREMENT'):
     install_requirements = [
@@ -35,23 +36,23 @@ class bdist_wheel_abi3(bdist_wheel):
         return python, abi, plat
 
 
-
 class CustomCMakeExtension(cmake_build_extension.CMakeExtension):
     """XXX: Override CMakeExtension to support extra kwargs"""
+
     def __init__(
-        self,
-        name: str,
-        install_prefix: str = "",
-        disable_editable: bool = False,
-        write_top_level_init: str = None,
-        cmake_configure_options: List[str] = (),
-        source_dir: str = str(Path(".").absolute()),
-        cmake_build_type: str = "Release",
-        cmake_component: str = None,
-        cmake_depends_on: List[str] = (),
-        expose_binaries: List[str] = (),
-        cmake_generator: str = "Ninja",
-        **kwargs
+            self,
+            name: str,
+            install_prefix: str = "",
+            disable_editable: bool = False,
+            write_top_level_init: str = None,
+            cmake_configure_options: List[str] = (),
+            source_dir: str = str(Path(".").absolute()),
+            cmake_build_type: str = "Release",
+            cmake_component: str = None,
+            cmake_depends_on: List[str] = (),
+            expose_binaries: List[str] = (),
+            cmake_generator: str = "Ninja",
+            **kwargs
     ):
         setuptools.Extension.__init__(self, name=name, sources=[], **kwargs)
 
@@ -76,6 +77,24 @@ class CustomCMakeExtension(cmake_build_extension.CMakeExtension):
 init_py = Path("init.py").read_text()
 
 
+class CustomBuildCommand(setuptools.Command):
+    """A custom command that ensures that build_ext is executed before build_py."""
+
+    description = 'Build package'
+    user_options = []
+
+    def finalize_options(self) -> None:
+        pass
+
+    def initialize_options(self) -> None:
+        pass
+
+    def run(self):
+        self.run_command('install')
+        p = subprocess.run(r"python .\support\generate_pyi.py --sys-path .\build\temp.win-amd64-cpython-310 PySide6QtAds", shell=True)
+        self.run_command('bdist_wheel')
+
+
 setuptools.setup(
     ext_modules=[
         CustomCMakeExtension(
@@ -86,13 +105,14 @@ setuptools.setup(
             cmake_configure_options=[
                 "-DBUILD_EXAMPLES:BOOL=OFF",
                 "-DBUILD_STATIC:BOOL=ON",
-                "-DADS_VERSION=4.0.2",
+                "-DADS_VERSION=4.0.1",
                 f"-DPython3_ROOT_DIR={Path(sys.prefix)}"
             ],
             py_limited_api=True
         ),
     ],
     cmdclass=dict(
+        build_all=CustomBuildCommand,
         build_ext=cmake_build_extension.BuildExtension,
         bdist_wheel=bdist_wheel_abi3
     ),
