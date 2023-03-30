@@ -31,7 +31,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(qtads_subdir "Qt-Advanced-Docking-System")
 set(qtads_dir ${CMAKE_CURRENT_SOURCE_DIR}/${qtads_subdir})
 add_subdirectory(${qtads_subdir} EXCLUDE_FROM_ALL)
-set(project_library "qtadvanceddocking")
+set(project_library "qt6advanceddocking")
 
 # The name of the generated bindings module (as imported in Python).
 set(bindings_library "PySide6QtAds")
@@ -223,6 +223,7 @@ target_include_directories(${bindings_library} PRIVATE ${pyside_additional_inclu
 target_include_directories(${bindings_library} PRIVATE ${pyside_include_dir})
 target_include_directories(${bindings_library} PRIVATE ${python_include_dir})
 target_include_directories(${bindings_library} PRIVATE ${shiboken_include_dir})
+# target_include_directories(${bindings_library} PRIVATE "${CMAKE_SOURCE_DIR}/src")
 target_include_directories(${bindings_library} PRIVATE "${CMAKE_SOURCE_DIR}/src")
 
 target_link_libraries(${bindings_library} PRIVATE Qt6::Widgets)
@@ -230,8 +231,8 @@ target_link_libraries(${bindings_library} PRIVATE ${project_library})
 target_link_libraries(${bindings_library} PRIVATE ${pyside_shared_libraries})
 target_link_libraries(${bindings_library} PRIVATE ${shiboken_shared_libraries})
 
-target_compile_options(qtadvanceddocking PRIVATE -Og)
-target_compile_options(${bindings_library} PRIVATE -Og)
+# target_compile_options(qt6advanceddocking PRIVATE -Og)
+# target_compile_options(${bindings_library} PRIVATE -Og)
 target_compile_definitions(${bindings_library} PRIVATE "-DPy_LIMITED_API=0x03070000")
 
 # Adjust the name of generated module.

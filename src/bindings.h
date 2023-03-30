@@ -1,5 +1,8 @@
 #ifndef BINDINGS_H
 #define BINDINGS_H
+#include <AutoHideDockContainer.h>
+#include <AutoHideSideBar.h>
+#include <AutoHideTab.h>
 #include <DockAreaTabBar.h>
 #include <DockAreaTitleBar.h>
 #include <DockAreaTitleBar_p.h>
@@ -18,4 +21,5 @@
 #include <FloatingDragPreview.h>
 #include <IconProvider.h>
 #include <ads_globals.h>
+#include <PushButton.h>
 #endif // BINDINGS_H

@@ -23,6 +23,7 @@
         <enum-type name="eDragState" />
         <enum-type name="eIcon" />
         <enum-type name="eBitwiseOperator" />
+        <enum-type name="SideBarLocation" />
 
         <object-type name="CDockAreaTabBar">
             <modify-function signature="CDockAreaTabBar(ads::CDockAreaWidget*)">
@@ -150,7 +151,7 @@
                     <parent index="this" action="add"/>
                 </modify-argument>
             </modify-function>
-            <modify-function signature="addDockWidget(ads::DockWidgetArea, ads::CDockWidget*, ads::CDockAreaWidget*)">
+            <modify-function signature="addDockWidget(ads::DockWidgetArea, ads::CDockWidget*, ads::CDockAreaWidget*, int)">
                 <modify-argument index="2">
                     <parent index="this" action="add"/>
                 </modify-argument>
@@ -176,6 +177,7 @@
         <object-type name="CDockManager">
             <enum-type name="eViewMenuInsertionOrder" />
             <enum-type name="eConfigFlag" flags="ConfigFlags" />
+            <enum-type name="eAutoHideFlag" flags="AutoHideFlags" />
 
             <modify-function signature="registerFloatingWidget(ads::CFloatingDockContainer*)">
                 <modify-argument index="1">
@@ -202,7 +204,7 @@
                     <parent index="this" action="add"/>
                 </modify-argument>
             </modify-function>
-            <modify-function signature="addDockWidget(ads::DockWidgetArea, ads::CDockWidget*, ads::CDockAreaWidget*)">
+            <modify-function signature="addDockWidget(ads::DockWidgetArea, ads::CDockWidget*, ads::CDockAreaWidget*, int)">
                 <modify-argument index="2">
                     <parent index="this" action="add"/>
                 </modify-argument>
@@ -215,7 +217,7 @@
                     <parent index="this" action="add"/>
                 </modify-argument>
             </modify-function>
-            <modify-function signature="addDockWidgetTabToArea(ads::CDockWidget*, ads::CDockAreaWidget*)">
+            <modify-function signature="addDockWidgetTabToArea(ads::CDockWidget*, ads::CDockAreaWidget*, int)">
                 <modify-argument index="1">
                     <parent index="this" action="add"/>
                 </modify-argument>
