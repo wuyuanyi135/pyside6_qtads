@@ -19,6 +19,8 @@
 #include <ElidingLabel.h>
 #include <FloatingDockContainer.h>
 #include <FloatingDragPreview.h>
+#include <PushButton.h>
+#include <ResizeHandle.h>
 #include <IconProvider.h>
 #include <ads_globals.h>
 #include <PushButton.h>
