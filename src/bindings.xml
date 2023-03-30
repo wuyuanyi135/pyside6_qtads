@@ -23,6 +23,7 @@
         <enum-type name="eDragState" />
         <enum-type name="eIcon" />
         <enum-type name="eBitwiseOperator" />
+        <enum-type name="SideBarLocation" />
 
         <object-type name="CDockAreaTabBar">
             <modify-function signature="CDockAreaTabBar(ads::CDockAreaWidget*)">
@@ -94,6 +95,11 @@
                     <parent index="this" action="add"/>
                 </modify-argument>
             </modify-function>
+            <modify-function signature="createDockWidgetSideTab(ads::CDockWidget*) const">
+                <modify-argument index="1">
+                    <parent index="this" action="add"/>
+                </modify-argument>
+            </modify-function>
             <modify-function signature="createDockAreaTabBar(ads::CDockAreaWidget*) const">
                 <modify-argument index="1">
                     <parent index="this" action="add"/>
@@ -122,6 +128,11 @@
         </object-type>
 
         <object-type name="CDockContainerWidget">
+            <modify-function signature="createAndSetupAutoHideContainer(ads::SideBarLocation, ads::CDockWidget*)">
+                <modify-argument index="2">
+                    <parent index="this" action="add"/>
+                </modify-argument>
+            </modify-function>
             <modify-function signature="dropFloatingWidget(ads::CFloatingDockContainer*, const QPoint&amp;)">
                 <modify-argument index="1">
                     <parent index="this" action="add"/>
@@ -130,6 +141,16 @@
             <modify-function signature="dropWidget(QWidget*, ads::DockWidgetArea, ads::CDockAreaWidget*)">
                 <modify-argument index="1">
                     <parent index="this" action="add"/>
+                </modify-argument>
+            </modify-function>
+            <modify-function signature="registerAutoHideWidget(ads::CAutoHideDockContainer*)">
+                <modify-argument index="1">
+                    <parent index="this" action="add"/>
+                </modify-argument>
+            </modify-function>
+            <modify-function signature="removeAutoHideWidget(ads::CAutoHideDockContainer*)">
+                <modify-argument index="1">
+                    <parent index="this" action="remove"/>
                 </modify-argument>
             </modify-function>
             <modify-function signature="addDockArea(ads::CDockAreaWidget*, ads::DockWidgetArea)">
@@ -150,7 +171,7 @@
                     <parent index="this" action="add"/>
                 </modify-argument>
             </modify-function>
-            <modify-function signature="addDockWidget(ads::DockWidgetArea, ads::CDockWidget*, ads::CDockAreaWidget*)">
+            <modify-function signature="addDockWidget(ads::DockWidgetArea, ads::CDockWidget*, ads::CDockAreaWidget*, int)">
                 <modify-argument index="2">
                     <parent index="this" action="add"/>
                 </modify-argument>
@@ -165,7 +186,7 @@
             </modify-function>
         </object-type>
 
-        <object-type name="CDockFocusController">
+        <object-type name="CDockFocusController">            
             <modify-function signature="CDockFocusController(ads::CDockManager*)">
                 <modify-argument index="1">
                     <parent index="this" action="add"/>
@@ -202,11 +223,21 @@
                     <parent index="this" action="add"/>
                 </modify-argument>
             </modify-function>
-            <modify-function signature="addDockWidget(ads::DockWidgetArea, ads::CDockWidget*, ads::CDockAreaWidget*)">
+            <modify-function signature="addDockWidget(ads::DockWidgetArea, ads::CDockWidget*, ads::CDockAreaWidget*, int)">
                 <modify-argument index="2">
                     <parent index="this" action="add"/>
                 </modify-argument>
                 <modify-argument index="3">
+                    <parent index="this" action="add"/>
+                </modify-argument>
+            </modify-function>
+            <modify-function signature="addDockWidgetToContainer(ads::DockWidgetArea, ads::CDockWidget*, ads::CDockContainerWidget*)">
+                <modify-argument index="2">
+                    <parent index="this" action="add"/>
+                </modify-argument>
+            </modify-function>
+            <modify-function signature="addAutoHideDockWidget(SideBarLocation, ads::CDockWidget*)">
+                <modify-argument index="2">
                     <parent index="this" action="add"/>
                 </modify-argument>
             </modify-function>
@@ -215,7 +246,7 @@
                     <parent index="this" action="add"/>
                 </modify-argument>
             </modify-function>
-            <modify-function signature="addDockWidgetTabToArea(ads::CDockWidget*, ads::CDockAreaWidget*)">
+            <modify-function signature="addDockWidgetTabToArea(ads::CDockWidget*, ads::CDockAreaWidget*, int)">
                 <modify-argument index="1">
                     <parent index="this" action="add"/>
                 </modify-argument>
@@ -312,6 +343,11 @@
                     <parent index="this" action="add"/>
                 </modify-argument>
             </modify-function>
+            <modify-function signature="setSideTabWidget(ads::CAutoHideTab*)">
+                <modify-argument index="1">
+                    <parent index="this" action="add"/>
+                </modify-argument>
+            </modify-function>
             <modify-function signature="setTitleBarActions(QList&lt;QAction*&gt;)">
                 <modify-argument index="1">
                     <parent index="this" action="add"/>
@@ -373,7 +409,39 @@
                 </modify-argument>
             </modify-function>
         </object-type>
-
+        
+        <object-type name="CAutoHideDockContainer">
+            <modify-function signature="addDockWidget(ads::CDockWidget*)">
+                <modify-argument index="1">
+                    <parent index="this" action="add"/>
+                </modify-argument>
+            </modify-function>
+        </object-type>
+        
+        <object-type name="CAutoHideTab" />
+        
+        <object-type name="CAutoHideSideBar">
+            <modify-function signature="insertDockWidget(int, ads::CDockWidget*)">
+                <modify-argument index="2">
+                    <parent index="this" action="add"/>
+                </modify-argument>
+            </modify-function>
+            <modify-function signature="removeAutoHideWidget(ads::CAutoHideDockContainer*)">
+                <modify-argument index="1">
+                    <parent index="this" action="remove"/>
+                </modify-argument>
+            </modify-function>
+            <modify-function signature="addAutoHideWidget(ads::CAutoHideDockContainer*)">
+                <modify-argument index="1">
+                    <parent index="this" action="add"/>
+                </modify-argument>
+            </modify-function>
+        </object-type>
+        
+        <object-type name="CPushButton" />
+        
+        <object-type name="CResizeHandle" />
+        
         <object-type name="CDockOverlayCross">
             <enum-type name="eIconColor"/>
         </object-type>
